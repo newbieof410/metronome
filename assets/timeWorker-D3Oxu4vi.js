@@ -1,0 +1,1 @@
+(function(){"use strict";let t=null,a=25;onmessage=function(e){e.data==="start"?t=setInterval(()=>postMessage("tick"),a):e.data==="stop"?(clearInterval(t),t=null):e.data.interval&&(a=e.data.interval,t&&(clearInterval(t),t=setInterval(()=>postMessage("tick"),a)))}})();
