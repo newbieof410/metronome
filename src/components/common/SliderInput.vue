@@ -131,10 +131,10 @@ function updateText(ctx) {
   }
 }
 
-function updateKnob(event, ctx) {
+function updateKnob(clientX, clientY, ctx) {
   const rect = canvas.value.getBoundingClientRect();
-  const mouseX = event.clientX - rect.left;
-  const mouseY = event.clientY - rect.top;
+  const mouseX = clientX - rect.left;
+  const mouseY = clientY - rect.top;
 
   // 计算鼠标与圆心的相对角度
   let newAngle = Math.atan2(mouseY - centerY, mouseX - centerX);
@@ -158,6 +158,34 @@ function updateKnob(event, ctx) {
   drawSlider(ctx);
 }
 
+function handleMove(event, ctx) {
+  let clientX;
+  let clientY;
+
+  if (event.type.startsWith('touch')) {
+    clientX = event.touches[0].clientX;
+    clientY = event.touches[0].clientY;
+  } else {
+    clientX = event.clientX;
+    clientY = event.clientY;
+  }
+
+  updateKnob(clientX, clientY, ctx);
+}
+
+function throttle(func, delay) {
+  let lastTime = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastTime > delay) {
+      lastTime = now;
+      func.apply(this, args);
+    }
+  };
+}
+
+const throttledHandleMove = throttle(handleMove, 30);
+
 // 初始化 Canvas
 onMounted(() => {
   canvasCtx = setupCanvas(canvas.value);
@@ -165,16 +193,31 @@ onMounted(() => {
   // 绘制初始滑块
   drawSlider(canvasCtx);
 
-  // 鼠标事件监听
   canvas.value.addEventListener('mousedown', () => {
     dragging = true;
   });
 
+  canvas.value.addEventListener('touchstart', () => {
+    dragging = true;
+  });
+
   window.addEventListener('mousemove', (event) => {
-    if (dragging) updateKnob(event, canvasCtx);
+    if (dragging) {
+      throttledHandleMove(event, canvasCtx);
+    }
+  });
+
+  window.addEventListener('touchmove', (event) => {
+    if (dragging) {
+      throttledHandleMove(event, canvasCtx);
+    }
   });
 
   window.addEventListener('mouseup', () => {
+    dragging = false;
+  });
+
+  window.addEventListener('touchend', () => {
     dragging = false;
   });
 });
