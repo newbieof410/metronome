@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, defineEmits, defineProps, watch } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -193,12 +193,14 @@ onMounted(() => {
   // 绘制初始滑块
   drawSlider(canvasCtx);
 
-  canvas.value.addEventListener('mousedown', () => {
+  canvas.value.addEventListener('mousedown', (event) => {
     dragging = true;
+    event.preventDefault();
   });
 
-  canvas.value.addEventListener('touchstart', () => {
+  canvas.value.addEventListener('touchstart', (event) => {
     dragging = true;
+    event.preventDefault();
   });
 
   window.addEventListener('mousemove', (event) => {
