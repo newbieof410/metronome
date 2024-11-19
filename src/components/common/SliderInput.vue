@@ -8,6 +8,7 @@
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
+      @mouseleave="handleLeave"
       @touchstart="handleMouseDown"
       @touchmove="handleMouseMove"
       @touchend="handleMouseUp"
@@ -211,6 +212,13 @@ const handleMouseMove = (event) => {
 const handleMouseUp = () => {
   dragging = false;
   emit('change', props.modelValue);
+};
+
+const handleLeave = () => {
+  if (dragging) {
+    emit('change', props.modelValue);
+  }
+  dragging = false;
 };
 
 onMounted(() => {
