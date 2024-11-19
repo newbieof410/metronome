@@ -112,11 +112,13 @@ function drawSlider(ctx) {
   ctx.strokeStyle = props.strokeStyleActive;
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, activeAngle, 0, false);
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = props.strokeStyle;
-  ctx.stroke();
+  if (angle.value != 0) {
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, activeAngle, 0, false);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = props.strokeStyle;
+    ctx.stroke();
+  }
 
   // 计算滑块点的位置
   const knobX = centerX + radius * Math.cos(angle.value);
