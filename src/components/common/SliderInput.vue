@@ -1,6 +1,17 @@
 <template>
   <div style="text-align: center">
-    <canvas ref="canvas" :width="width" :height="height" class="slider"></canvas>
+    <canvas
+      ref="canvas"
+      :width="width"
+      :height="height"
+      class="slider"
+      @mousedown="handleMouseDown"
+      @mousemove="handleMouseMove"
+      @mouseup="handleMouseUp"
+      @touchstart="handleMouseDown"
+      @touchmove="handleMouseMove"
+      @touchend="handleMouseUp"
+    ></canvas>
   </div>
 </template>
 
@@ -56,7 +67,7 @@ const angle = ref(
 let canvasCtx = null;
 let dragging = false; // 是否正在拖动滑块
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'change']);
 
 watch(
   () => props.text,
@@ -186,42 +197,25 @@ function throttle(func, delay) {
 
 const throttledHandleMove = throttle(handleMove, 30);
 
-// 初始化 Canvas
+const handleMouseDown = (event) => {
+  dragging = true;
+  event.preventDefault();
+};
+
+const handleMouseMove = (event) => {
+  if (dragging) {
+    throttledHandleMove(event, canvasCtx);
+  }
+};
+
+const handleMouseUp = () => {
+  dragging = false;
+  emit('change', props.modelValue);
+};
+
 onMounted(() => {
   canvasCtx = setupCanvas(canvas.value);
-
-  // 绘制初始滑块
   drawSlider(canvasCtx);
-
-  canvas.value.addEventListener('mousedown', (event) => {
-    dragging = true;
-    event.preventDefault();
-  });
-
-  canvas.value.addEventListener('touchstart', (event) => {
-    dragging = true;
-    event.preventDefault();
-  });
-
-  window.addEventListener('mousemove', (event) => {
-    if (dragging) {
-      throttledHandleMove(event, canvasCtx);
-    }
-  });
-
-  window.addEventListener('touchmove', (event) => {
-    if (dragging) {
-      throttledHandleMove(event, canvasCtx);
-    }
-  });
-
-  window.addEventListener('mouseup', () => {
-    dragging = false;
-  });
-
-  window.addEventListener('touchend', () => {
-    dragging = false;
-  });
 });
 </script>
 

@@ -35,7 +35,7 @@
         :min-value="40"
         :max-value="220"
         :text="tempoText"
-        @update:model-value="updateTempo"
+        @change="handleBpmChange"
       />
       <p>BPM</p>
     </n-flex>
@@ -71,6 +71,7 @@ import { Play, Stop } from '@vicons/ionicons5';
 
 // 响应式状态
 const bpm = ref(80); // 当前 BPM
+const lastBpm = ref(bpm.value); // 记录上个 bpm 数值
 const isPlaying = ref(false); // 播放状态
 const currentBeat = ref(0); // 当前拍
 let nextBeat = 0; // 下一拍
@@ -172,7 +173,7 @@ const scheduleNote = (beatNumber, time) => {
 
 const unitNoteDuration = computed(() => {
   const unit = getBeatUnit(unitNote.value);
-  return noteDuration(bpm.value, timeSignature.value.denominator, unit.noteType, unit.dotted);
+  return noteDuration(lastBpm.value, timeSignature.value.denominator, unit.noteType, unit.dotted);
 });
 
 // 计算下一拍
@@ -181,8 +182,8 @@ const advanceNote = () => {
   nextBeat = (nextBeat + 1) % numBeats.value;
 };
 
-// 更新 BPM
-const updateTempo = () => {
+const handleBpmChange = () => {
+  lastBpm.value = bpm.value;
   if (isPlaying.value) {
     stop();
     start();
