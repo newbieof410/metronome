@@ -6,17 +6,17 @@
         <div class="time-signature">
           <n-input-number
             v-model:value="timeSignature.numerator"
-            :min="1"
-            :max="16"
+            :min="minTimeSignature"
+            :max="maxTimeSignature"
             button-placement="both"
             class="time-signature-input"
           />
           <p>/</p>
           <n-input-number
             v-model:value="timeSignature.denominator"
-            :min="1"
-            :max="16"
-            :step="2"
+            :min="minTimeSignature"
+            :max="maxTimeSignature"
+            :step="timeSignatureStep"
             button-placement="both"
             class="time-signature-input"
           />
@@ -32,8 +32,8 @@
     <n-flex class="slider" justify="center" :vertical="true">
       <SliderInput
         v-model="bpm"
-        :min-value="40"
-        :max-value="220"
+        :min-value="minBpm"
+        :max-value="maxBpm"
         :text="tempoText"
         @change="handleBpmChange"
       />
@@ -63,7 +63,7 @@
 
 <script setup>
 import Worker from '../workers/timeWorker.js?worker';
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { beatUnits, noteDuration, getBeatUnit } from '../metronome.js';
 import SliderInput from './common/SliderInput.vue';
 import { NFlex, NButton, NIcon, NCard, NInputNumber, NSelect, NGrid, NGi } from 'naive-ui';
@@ -78,6 +78,12 @@ let nextBeat = 0; // 下一拍
 const noteLength = 0.04; // 音符长度（单位：秒）
 let nextBeatTime = 0.0; // 下一拍的时间（AudioContext 时间）
 const scheduleAheadTime = 0.1; // 调度提前时间（单位：秒）
+
+const minTimeSignature = 1;
+const maxTimeSignature = 16;
+const timeSignatureStep = 2;
+const minBpm = 40;
+const maxBpm = 220;
 
 // 用户设置
 const timeSignature = ref({ numerator: 4, denominator: 4 }); // 默认拍号
@@ -190,8 +196,71 @@ const handleBpmChange = () => {
   }
 };
 
-// 生命周期钩子
+const getUrlParams = function () {
+  const params = new URLSearchParams(window.location.search);
+
+  let bpmParam = params.get('bpm');
+  if (bpmParam) {
+    bpmParam = parseInt(bpmParam);
+    if (bpmParam >= minBpm && bpmParam <= maxBpm) {
+      bpm.value = bpmParam;
+      lastBpm.value = bpm.value;
+    }
+  }
+
+  let tsParam = params.get('ts');
+  if (tsParam) {
+    tsParam = tsParam.trim();
+    try {
+      const [numerator, denominator] = tsParam.split('/').map((item) => parseInt(item, 10));
+      if (numerator >= minTimeSignature && numerator <= maxTimeSignature) {
+        timeSignature.value.numerator = numerator;
+      }
+      if (
+        denominator >= minTimeSignature &&
+        denominator <= maxTimeSignature &&
+        (denominator - minTimeSignature) % timeSignatureStep === 0
+      ) {
+        timeSignature.value.denominator = denominator;
+      }
+    } catch {
+      () => {};
+    }
+  }
+
+  let noteParam = params.get('note');
+  if (noteParam) {
+    noteParam = noteParam.trim();
+    try {
+      getBeatUnit(noteParam);
+      unitNote.value = noteParam;
+    } catch {
+      () => {};
+    }
+  }
+};
+
+const updateUrlParams = function () {
+  const params = new URLSearchParams(window.location.search);
+  params.set('bpm', bpm.value);
+  params.set('ts', `${timeSignature.value.numerator}/${timeSignature.value.denominator}`);
+  params.set('note', unitNote.value);
+
+  // 更新 URL，避免刷新页面
+  const newUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState(null, '', newUrl);
+};
+
+watch(
+  [bpm, timeSignature, unitNote],
+  () => {
+    updateUrlParams();
+  },
+  { deep: true },
+);
+
 onMounted(() => {
+  getUrlParams();
   initializeAudio();
 });
 
